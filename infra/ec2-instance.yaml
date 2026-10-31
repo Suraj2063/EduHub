@@ -37,9 +37,9 @@ Resources:
           Description: HTTP for MERN app
 
   # ── EC2 Instance ──────────────────────────────────────────────────────────────
-  #   NOTE: No BlockDeviceMappings — AWS Academy lab_policy denies ec2:RunInstances
-  #   on volume/* resources. The AMI's default root volume is used as-is.
-  #   Ubuntu 24.04 AMIs default to 8GB which is fine for Docker builds.
+  #   Vocareum lab_policy allows gp2 volumes ONLY (not gp3).
+  #   Ubuntu 24.04 AMI defaults to gp3 root volume → must override to gp2.
+  #   Device name: /dev/xvda (required for Nitro-based t3 instances).
   Instance:
     Type: AWS::EC2::Instance
     Properties:
@@ -48,6 +48,12 @@ Resources:
       KeyName: !Ref KeyPair
       SecurityGroupIds:
         - !GetAtt SecurityGroup.GroupId
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: 8
+            DeleteOnTermination: true
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
