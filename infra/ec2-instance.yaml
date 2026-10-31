@@ -70,6 +70,11 @@ Resources:
           curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
             -o /usr/local/lib/docker/cli-plugins/docker-compose
           chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+          BUILDX_TAG=$(curl -sI https://github.com/docker/buildx/releases/latest | grep -i "location:" | sed -e 's|.*/tag/||' | tr -d '\r\n')
+          BUILDX_TAG="${BUILDX_TAG:-v0.38.1}"
+          curl -SL "https://github.com/docker/buildx/releases/download/${BUILDX_TAG}/buildx-${BUILDX_TAG}.linux-amd64" \
+            -o /usr/local/lib/docker/cli-plugins/docker-buildx
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
           echo "=== UserData bootstrap complete at $(date) ==="
       Tags:
         - Key: Name

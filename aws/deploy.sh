@@ -32,15 +32,39 @@ fi
 echo "📦 Pulling updated base container images..."
 docker compose pull mongo || true
 
-# 4. Build custom images and start containers in detached mode
+# 4. Ensure docker-buildx plugin (>= 0.17.0) is installed for docker compose build
+NEED_BUILDX=false
+if ! docker buildx version >/dev/null 2>&1; then
+  NEED_BUILDX=true
+else
+  BUILDX_VER=$(docker buildx version 2>/dev/null | grep -oE "v[0-9]+\.[0-9]+" | head -n1 | tr -d "v")
+  MAJOR=$(echo "$BUILDX_VER" | cut -d. -f1)
+  MINOR=$(echo "$BUILDX_VER" | cut -d. -f2)
+  if [ "${MAJOR:-0}" -eq 0 ] && [ "${MINOR:-0}" -lt 17 ]; then
+    NEED_BUILDX=true
+  fi
+fi
+
+if [ "$NEED_BUILDX" = true ]; then
+  echo "📦 Installing docker-buildx plugin..."
+  mkdir -p "$HOME/.docker/cli-plugins"
+  BUILDX_TAG=$(curl -sI https://github.com/docker/buildx/releases/latest | grep -i "location:" | sed -e 's|.*/tag/||' | tr -d '\r\n')
+  BUILDX_TAG="${BUILDX_TAG:-v0.38.1}"
+  curl -SL "https://github.com/docker/buildx/releases/download/${BUILDX_TAG}/buildx-${BUILDX_TAG}.linux-amd64" \
+    -o "$HOME/.docker/cli-plugins/docker-buildx"
+  chmod +x "$HOME/.docker/cli-plugins/docker-buildx"
+  echo "✅ Installed docker-buildx successfully."
+fi
+
+# 5. Build custom images and start containers in detached mode
 echo "🔨 Building images and recreating containers..."
 docker compose up -d --build --remove-orphans
 
-# 5. Clean up dangling and unused images to preserve EC2 disk space
+# 6. Clean up dangling and unused images to preserve EC2 disk space
 echo "🧹 Pruning unused Docker images and build caches..."
 docker image prune -f
 
-# 6. Check container health status
+# 7. Check container health status
 echo "🔍 Checking container status..."
 docker compose ps
 
