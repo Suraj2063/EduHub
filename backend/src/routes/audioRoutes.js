@@ -9,6 +9,11 @@ const { synthesizeAudio } = require("../utils/ttsService");
 
 const router = express.Router();
 
+const AUDIO_DIR = path.resolve(__dirname, "../../audio_cache");
+if (!fs.existsSync(AUDIO_DIR)) {
+  fs.mkdirSync(AUDIO_DIR, { recursive: true });
+}
+
 /**
  * POST /api/audio/generate-script
  * Generates a conversational AI lecture script from the actual PDF content in English or Nepali.

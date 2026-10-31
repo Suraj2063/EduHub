@@ -4,8 +4,17 @@ const fs = require("fs");
 const os = require("os");
 const { MsEdgeTTS, OUTPUT_FORMAT } = require("msedge-tts");
 
-const PIPER_BIN = "/home/suraj/.local/bin/piper";
-const PIPER_MODEL = path.resolve(__dirname, "../../piper_models/en_US-lessac-medium.onnx");
+function getPiperBin() {
+  if (process.env.PIPER_BIN && fs.existsSync(process.env.PIPER_BIN)) return process.env.PIPER_BIN;
+  if (fs.existsSync("/usr/local/bin/piper")) return "/usr/local/bin/piper";
+  if (fs.existsSync("/usr/bin/piper")) return "/usr/bin/piper";
+  if (fs.existsSync("/home/suraj/.local/bin/piper")) return "/home/suraj/.local/bin/piper";
+  return "piper";
+}
+
+const PIPER_MODEL =
+  process.env.PIPER_MODEL ||
+  path.resolve(__dirname, "../../piper_models/en_US-lessac-medium.onnx");
 
 /**
  * Pure Node.js English Neural Speech Synthesizer
@@ -13,11 +22,12 @@ const PIPER_MODEL = path.resolve(__dirname, "../../piper_models/en_US-lessac-med
  */
 function synthesizePiper(text, outputFile) {
   return new Promise((resolve, reject) => {
+    const piperBin = getPiperBin();
     if (!fs.existsSync(PIPER_MODEL)) {
       return reject(new Error(`Piper model not found at ${PIPER_MODEL}`));
     }
 
-    const proc = spawn(PIPER_BIN, [
+    const proc = spawn(piperBin, [
       "-m", PIPER_MODEL,
       "-f", outputFile,
     ]);
@@ -67,6 +77,29 @@ async function synthesizeNepali(text, outputFile) {
 }
 
 /**
+ * Pure Node.js English Neural Speech Synthesizer
+ * Uses official Edge Speech engine via msedge-tts. Zero external binaries required.
+ */
+async function synthesizeEnglish(text, outputFile) {
+  const tts = new MsEdgeTTS();
+  await tts.setMetadata("en-US-ChristopherNeural", OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "edge-tts-"));
+  try {
+    const res = await tts.toFile(tmpDir, text);
+    if (res?.audioFilePath && fs.existsSync(res.audioFilePath)) {
+      fs.copyFileSync(res.audioFilePath, outputFile);
+      return outputFile;
+    }
+    throw new Error("Edge-TTS failed to produce English audio file");
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch (_) {}
+  }
+}
+
+/**
  * Pure Node.js Speech Synthesis Router
  * @param {Object} options
  * @param {string} options.text
@@ -87,12 +120,23 @@ async function synthesizeSpeech({ text, language = "en", outputFile }) {
   if (language === "ne") {
     return await synthesizeNepali(cleanText, outputFile);
   } else {
-    return await synthesizePiper(cleanText, outputFile);
+    // Try Piper first if available, with automatic fallback to Edge Neural English
+    const piperBin = getPiperBin();
+    const piperAvailable = fs.existsSync(piperBin) || piperBin === "piper";
+    if (piperAvailable && fs.existsSync(PIPER_MODEL)) {
+      try {
+        return await synthesizePiper(cleanText, outputFile);
+      } catch (piperErr) {
+        console.warn("[TTS] Piper failed, falling back to Edge TTS:", piperErr.message);
+      }
+    }
+    return await synthesizeEnglish(cleanText, outputFile);
   }
 }
 
 module.exports = {
   synthesizeSpeech,
+  synthesizeEnglish,
   synthesizePiper,
   synthesizeNepali,
 };
