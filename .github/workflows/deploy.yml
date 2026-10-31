@@ -57,11 +57,20 @@ jobs:
             --output text)
           echo "✅ Resolved AMI: $UBUNTU_AMI"
 
+          # Get the account ID to build LabRole ARN
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "📋 Account ID: $ACCOUNT_ID"
+
+          # AWS Academy Learner Labs create a 'LabRole' with broader permissions.
+          # The awsstudent IAM user has lab_policy that denies ec2:RunInstances on volume/*.
+          # By passing LabRole as the CF execution role, CloudFormation uses it to make
+          # EC2 API calls — bypassing the awsstudent user's restrictions.
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "$TEMPLATE" \
             --parameter-overrides InstanceType=t3.medium AmiId="$UBUNTU_AMI" \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/LabRole" \
             --no-fail-on-empty-changeset || {
               echo "::error::CloudFormation deploy failed! Printing failure reasons:"
               aws cloudformation describe-stack-events \
