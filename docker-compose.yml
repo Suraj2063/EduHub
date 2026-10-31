@@ -33,7 +33,7 @@ services:
         required: false
     environment:
       - PORT=8000
-      - MONGO_URI=mongodb://mongo:27017/eduhub
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/eduhub}
       - NODE_ENV=production
       - JWT_SECRET=${JWT_SECRET:-eduhub_default_production_secret_key_2026}
       - CLIENT_URL=${CLIENT_URL:-*}

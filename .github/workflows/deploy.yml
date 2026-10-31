@@ -106,8 +106,9 @@ jobs:
       - name: Deploy MERN Docker Containers
         env:
           IP: ${{ steps.instance.outputs.ip }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
-          ssh $SSH_OPTS ec2-user@"$IP" << 'EOF'
+          ssh $SSH_OPTS ec2-user@"$IP" "MONGO_URI='$MONGO_URI' bash -s" << 'EOF'
             set -e
             if [ ! -d "$HOME/MERN_Project" ]; then
               cd "$HOME"
@@ -117,6 +118,11 @@ jobs:
             cd "$HOME/MERN_Project"
             git fetch origin main
             git reset --hard origin/main
+
+            if [ -n "$MONGO_URI" ]; then
+              echo "MONGO_URI=$MONGO_URI" > .env
+              echo "✅ Configured production MONGO_URI in .env"
+            fi
 
             chmod +x aws/deploy.sh
             ./aws/deploy.sh
