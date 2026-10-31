@@ -53,7 +53,7 @@ Resources:
         - DeviceName: /dev/xvda
           Ebs:
             VolumeType: gp2
-            VolumeSize: 8
+            VolumeSize: 20
             DeleteOnTermination: true
       UserData:
         Fn::Base64: |
