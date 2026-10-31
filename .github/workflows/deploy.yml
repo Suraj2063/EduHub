@@ -36,11 +36,21 @@ jobs:
 
       - name: Deploy CloudFormation Stack (Amazon Linux 2023, t3.medium, gp2)
         run: |
-          # If previous run failed and is stuck in ROLLBACK_COMPLETE, delete it first
+          # Check stack and instance health; delete stale or terminated stack
           STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text 2>/dev/null || true)
           echo "Current stack status: ${STATUS:-DOES_NOT_EXIST}"
-          if [ "$STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STATUS" = "CREATE_FAILED" ]; then
-            echo "🗑️ Deleting rolled-back stack before re-deploying..."
+
+          INSTANCE_STATE=""
+          if [ -n "$STATUS" ] && [ "$STATUS" != "None" ]; then
+            INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='InstanceId'].OutputValue" --output text 2>/dev/null || true)
+            if [ -n "$INSTANCE_ID" ] && [ "$INSTANCE_ID" != "None" ]; then
+              INSTANCE_STATE=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].State.Name" --output text 2>/dev/null || true)
+              echo "Existing EC2 instance ($INSTANCE_ID) state: ${INSTANCE_STATE:-unknown}"
+            fi
+          fi
+
+          if [ "$STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STATUS" = "CREATE_FAILED" ] || [ "$INSTANCE_STATE" = "terminated" ]; then
+            echo "🗑️ Deleting stale/terminated stack before re-deploying..."
             aws cloudformation delete-stack --stack-name "$STACK_NAME"
             aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
             echo "✅ Cleaned up old stack."
