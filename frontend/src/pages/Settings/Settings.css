@@ -1,0 +1,359 @@
+/* ==========================================================================
+   Settings Feature Styles
+   ========================================================================== */
+
+.settings-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 32px 60px 32px;
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.settings-main-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.settings-main-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.settings-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 36px;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+.settings-card-title {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.settings-card-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+/* ==========================================================================
+   Profile Picture Section (Circular Avatar + Camera Overlay)
+   ========================================================================== */
+.settings-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 20px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  margin-bottom: 28px;
+}
+
+.settings-avatar-wrapper {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  flex-shrink: 0;
+  background-color: #eef2ff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-avatar-wrapper:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.25);
+}
+
+.settings-avatar-wrapper.uploading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.settings-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.settings-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #4338ca;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+}
+
+/* Hover Camera Overlay */
+.settings-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.settings-avatar-wrapper:hover .settings-avatar-overlay,
+.settings-avatar-wrapper.uploading .settings-avatar-overlay {
+  opacity: 1;
+}
+
+.settings-camera-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.settings-avatar-overlay-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-avatar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-avatar-user-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.settings-avatar-user-email {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.settings-avatar-hint {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+  max-width: 480px;
+}
+
+.btn-upload-avatar-trigger {
+  align-self: flex-start;
+  margin-top: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-upload-avatar-trigger:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.btn-upload-avatar-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 2-column grid for DOB & Age */
+.settings-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .settings-avatar-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  .settings-avatar-info {
+    align-items: center;
+  }
+  .btn-upload-avatar-trigger {
+    align-self: center;
+  }
+  .settings-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Password Input with Eye Toggle
+   ========================================================================== */
+.settings-password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-password-input-wrapper .field-input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.settings-password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.settings-password-toggle-btn:hover {
+  color: #1e293b;
+}
+
+/* Criteria checklist inside Settings */
+.criteria-item.met {
+  color: #15803d;
+}
+
+.criteria-item.met .criteria-icon {
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.criteria-item.unmet {
+  color: #94a3b8;
+}
+
+.criteria-item.unmet .criteria-icon {
+  color: #cbd5e1;
+}
+
+/* ==========================================================================
+   Save & Action Buttons
+   ========================================================================== */
+.settings-form-row-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-settings-save {
+  background-color: #4f46e5;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-settings-save:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+.btn-settings-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Danger Zone */
+.settings-danger-card {
+  border-color: #fecdd3;
+  background-color: #ffffff;
+}
+
+.danger-title {
+  color: #be123c;
+}
+
+.danger-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid #ffe4e6;
+}
+
+.danger-text-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.danger-text-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.btn-danger-confirm {
+  background-color: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-danger-confirm:hover:not(:disabled) {
+  background-color: #ffe4e6;
+}
+
+.btn-danger-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .settings-card {
+    padding: 24px;
+  }
+  .danger-action-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

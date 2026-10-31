@@ -1,0 +1,81 @@
+services:
+  # ==========================================
+  # 1. MongoDB Database Container
+  # ==========================================
+  mongo:
+    image: mongo:7.0
+    container_name: mern-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - mern-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ==========================================
+  # 2. Node.js / Express Backend Container
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mern-backend
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env
+        required: false
+      - path: ./.env
+        required: false
+    environment:
+      - PORT=8000
+      - MONGO_URI=mongodb://mongo:27017/eduhub
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-eduhub_default_production_secret_key_2026}
+      - CLIENT_URL=${CLIENT_URL:-*}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - mern-network
+    # Port 8000 is internal to the Docker network; Nginx accesses it directly
+
+  # ==========================================
+  # 3. React + Nginx Frontend Container
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mern-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mern-network
+
+# ==========================================
+# Named Volumes for Data Persistence
+# ==========================================
+volumes:
+  mongo_data:
+    driver: local
+
+# ==========================================
+# Isolated Bridge Network
+# ==========================================
+networks:
+  mern-network:
+    driver: bridge

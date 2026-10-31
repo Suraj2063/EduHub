@@ -1,0 +1,113 @@
+name: Deploy MERN App (CloudFormation + Docker)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency: deploy
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: mern-production-stack
+  TEMPLATE: infra/ec2-instance.yaml
+
+jobs:
+  deploy:
+    name: Provision & Deploy MERN to EC2
+    runs-on: ubuntu-latest
+    env:
+      SSH_OPTS: -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o LogLevel=ERROR
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation Template
+        run: aws cloudformation validate-template --template-body file://${{ env.TEMPLATE }}
+
+      - name: Deploy CloudFormation Stack (t3.medium + 20GB Storage)
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$STACK_NAME" \
+            --template-file "$TEMPLATE" \
+            --parameter-overrides InstanceType=t3.medium VolumeSize=20 \
+            --no-fail-on-empty-changeset
+
+      - name: Retrieve Instance Details & Public IP
+        id: instance
+        run: |
+          output() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
+          INSTANCE_ID=$(output InstanceId)
+          KEY_ID=$(output KeyPairId)
+
+          STATE=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].State.Name" --output text)
+          echo "Instance $INSTANCE_ID is $STATE"
+
+          if [ "$STATE" = "stopped" ]; then 
+            aws ec2 start-instances --instance-ids "$INSTANCE_ID"
+          fi
+          aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+
+          IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "key_id=$KEY_ID" >> "$GITHUB_OUTPUT"
+          echo "🌐 EC2 Public IP is: $IP"
+
+      - name: Get SSH Key from AWS SSM Parameter Store
+        run: |
+          aws ssm get-parameter \
+            --name "/ec2/keypair/${{ steps.instance.outputs.key_id }}" \
+            --with-decryption \
+            --query Parameter.Value \
+            --output text > ec2-key.pem
+          chmod 600 ec2-key.pem
+
+      - name: Wait for SSH & First-Boot Docker Setup
+        env:
+          IP: ${{ steps.instance.outputs.ip }}
+        run: |
+          for i in $(seq 1 30); do
+            ssh $SSH_OPTS ubuntu@"$IP" true && break
+            echo "Waiting for SSH to be ready ($i/30)..."
+            sleep 10
+          done
+
+          # Wait for UserData (Docker installation) to finish
+          ssh $SSH_OPTS ubuntu@"$IP" 'cloud-init status --wait' || true
+
+      - name: Deploy MERN Docker Containers
+        env:
+          IP: ${{ steps.instance.outputs.ip }}
+        run: |
+          ssh $SSH_OPTS ubuntu@"$IP" << 'EOF'
+            set -e
+            if [ ! -d "$HOME/MERN_Project" ]; then
+              cd "$HOME"
+              git clone "https://github.com/${{ github.repository }}.git" MERN_Project
+            fi
+
+            cd "$HOME/MERN_Project"
+            git fetch origin main
+            git reset --hard origin/main
+
+            chmod +x aws/deploy.sh
+            ./aws/deploy.sh
+          EOF
+
+      - name: Show Live Application URL
+        run: |
+          echo "### 🚀 Live at http://${{ steps.instance.outputs.ip }}" >> "$GITHUB_STEP_SUMMARY"
+          aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs" --output table | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Cleanup SSH Key on Runner
+        if: always()
+        run: rm -f ec2-key.pem

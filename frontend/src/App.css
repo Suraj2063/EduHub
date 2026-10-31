@@ -1,0 +1,16 @@
+/* ==========================================================================
+   Root Application Styles
+   ========================================================================== */
+
+.app-root {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.app-main {
+  flex: 1;
+}

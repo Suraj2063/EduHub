@@ -1,0 +1,50 @@
+/* ==========================================================================
+   EduHub Brand Logo Styles — Premium Standard Design
+   ========================================================================== */
+
+.eduhub-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.18s ease;
+}
+
+.eduhub-logo-link:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.eduhub-logo-link:active {
+  transform: translateY(0);
+}
+
+.eduhub-logo-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.eduhub-logo-svg {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 13px;
+  box-shadow:
+    0 0 0 1px rgba(79, 70, 229, 0.18),
+    0 4px 16px -2px rgba(79, 70, 229, 0.32),
+    0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.eduhub-brand-title {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 1.32rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  user-select: none;
+}
+
+.eduhub-brand-accent {
+  color: #4f46e5;
+  font-weight: 800;
+}

@@ -1,0 +1,79 @@
+# ==============================================================================
+# EduHub — Project Requirements & Dependencies Specification
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. System & Runtime Environment
+# ------------------------------------------------------------------------------
+# Operating System: Linux / macOS / Windows (WSL recommended on Windows)
+Node.js >= 18.0.0
+npm >= 9.0.0
+MongoDB >= 6.0.0 (Local instance or MongoDB Atlas)
+
+# System Binaries:
+# - poppler-utils (Provides pdftoppm for PDF rasterization & OCR fallback)
+#   Install on Debian/Ubuntu: sudo apt-get install poppler-utils
+#   Install on Arch Linux:   sudo pacman -S poppler
+#   Install on macOS:        brew install poppler
+
+# ------------------------------------------------------------------------------
+# 2. Backend Dependencies (Node.js / Express)
+# ------------------------------------------------------------------------------
+# Location: /backend/package.json
+axios==1.21.0
+bcryptjs==3.0.3
+cloudinary==2.11.0
+cors==2.8.6
+dotenv==18.0.9
+express==5.3.0
+groq-sdk==1.6.0
+jsonwebtoken==9.0.3
+mongoose==9.11.2
+msedge-tts==2.1.1
+multer==2.5.0
+nodemailer==10.3.1
+pdf-parse==1.1.1
+tesseract.js==7.0.0
+
+# Backend Dev Dependencies:
+nodemon==3.1.14
+
+# ------------------------------------------------------------------------------
+# 3. Frontend Dependencies (React 19 / Vite)
+# ------------------------------------------------------------------------------
+# Location: /frontend/package.json
+react==19.2.8
+react-dom==19.2.8
+react-router-dom==7.18.4
+axios==1.20.0
+react-toastify==11.1.0
+
+# Frontend Dev Dependencies & Build Tools:
+vite==8.3.0
+@vitejs/plugin-react==6.1.1
+tailwindcss==4.3.3
+@tailwindcss/vite==4.3.3
+oxlint==1.81.0
+
+# ------------------------------------------------------------------------------
+# 4. External Cloud Services & API Keys
+# ------------------------------------------------------------------------------
+# The application requires the following free-tier credentials configured in backend/.env:
+#
+# 1. Groq Cloud AI API (Required for video/audio/quiz generation & AI Tutor):
+#    - Provider: https://console.groq.com
+#    - Variable: GROQ_API_KEY
+#
+# 2. Cloudinary (Required for storing user avatars and course document PDFs):
+#    - Provider: https://cloudinary.com
+#    - Variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+#
+# 3. Gmail SMTP (Required for sending OTP verification emails):
+#    - Provider: Google Account App Password (https://myaccount.google.com/apppasswords)
+#    - Variables: EMAIL_USER, EMAIL_PASS
+#
+# 4. MongoDB Database:
+#    - Variable: MONGO_URI (e.g. mongodb://localhost:27017/eduhub)
+#
+# 5. JWT Authentication:
+#    - Variable: JWT_SECRET (Random secure string)

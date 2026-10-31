@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: MERN Stack EC2 Instance (Ubuntu 24.04, t3.medium, 20GB gp3, Docker & Docker Compose)
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t3.small, t3.medium, t3.large]
+    Description: EC2 instance size (Default t3.medium with 4GB RAM)
+  VolumeSize:
+    Type: Number
+    Default: 20
+    Description: Root disk volume size in GB (Default 20GB)
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Description: Public SSM parameter resolving to the latest Ubuntu 24.04 LTS AMI
+
+Resources:
+  # 1. SSH Key Pair (AWS automatically stores private key in SSM Parameter Store)
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub "${AWS::StackName}-key"
+
+  # 2. Security Group (Open Port 22 SSH and Port 80 HTTP)
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH (22) and HTTP (80)
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # 3. EC2 Instance (t3.medium + 20GB gp3 + Docker on first boot)
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: !Ref VolumeSize
+            DeleteOnTermination: true
+      SecurityGroupIds:
+        - !GetAtt SecurityGroup.GroupId
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -e
+          apt-get update -y
+          apt-get install -y ca-certificates curl gnupg git
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          chmod a+r /etc/apt/keyrings/docker.gpg
+          echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          systemctl enable docker
+          systemctl start docker
+          usermod -aG docker ubuntu
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-instance"
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref Instance
+  PublicIp:
+    Description: Public IP of the instance
+    Value: !GetAtt Instance.PublicIp
+  KeyPairId:
+    Description: Key pair ID used to fetch private key from SSM
+    Value: !GetAtt KeyPair.KeyPairId
+  WebsiteURL:
+    Description: URL of the MERN Application
+    Value: !Sub "http://${Instance.PublicIp}"

@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Secrets
+.env
+*.env
+!.env.example
+
+# Large model data & OCR training weights
+*.traineddata
+eng.traineddata
+piper_models/
+
+# Local cache & uploads
+uploads/
+audio_cache/
+video_cache/
+*.wav
+*.mp3
+*.mp4
+
+# OS & Logs
+.DS_Store
+*.log

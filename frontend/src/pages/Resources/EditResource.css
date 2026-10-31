@@ -1,0 +1,27 @@
+/* ==========================================================================
+   EditResource Feature Styles
+   ========================================================================== */
+
+.edit-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.edit-cancel-btn {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 13px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.15s;
+}
+
+.edit-cancel-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
