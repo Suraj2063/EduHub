@@ -117,8 +117,16 @@ jobs:
         env:
           IP: ${{ steps.instance.outputs.ip }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
-          ssh $SSH_OPTS ec2-user@"$IP" "MONGO_URI='$MONGO_URI' bash -s" << 'EOF'
+          # 1. Ensure project directory exists and update Git repo
+          ssh $SSH_OPTS ec2-user@"$IP" << 'EOF'
             set -e
             if [ ! -d "$HOME/MERN_Project" ]; then
               cd "$HOME"
@@ -128,12 +136,27 @@ jobs:
             cd "$HOME/MERN_Project"
             git fetch origin main
             git reset --hard origin/main
+          EOF
 
-            if [ -n "$MONGO_URI" ]; then
-              echo "MONGO_URI=$MONGO_URI" > .env
-              echo "✅ Configured production MONGO_URI in .env"
-            fi
+          # 2. Safely stream production environment variables to EC2 .env
+          ssh $SSH_OPTS ec2-user@"$IP" 'cat > /home/ec2-user/MERN_Project/.env' << ENVEOF
+          PORT=8000
+          NODE_ENV=production
+          CLIENT_URL=*
+          MONGO_URI=${MONGO_URI}
+          GROQ_API_KEY=${GROQ_API_KEY}
+          CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+          CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+          CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+          EMAIL_USER=${EMAIL_USER}
+          EMAIL_PASS=${EMAIL_PASS}
+          JWT_SECRET=${JWT_SECRET:-eduhub_default_production_secret_key_2026}
+          ENVEOF
 
+          # 3. Execute deployment script
+          ssh $SSH_OPTS ec2-user@"$IP" << 'EOF'
+            set -e
+            cd "$HOME/MERN_Project"
             chmod +x aws/deploy.sh
             ./aws/deploy.sh
           EOF
