@@ -34,7 +34,7 @@ jobs:
       - name: Validate CloudFormation Template
         run: aws cloudformation validate-template --template-body file://${{ env.TEMPLATE }}
 
-      - name: Deploy CloudFormation Stack (t3.medium + 20GB Storage)
+      - name: Deploy CloudFormation Stack (t3.medium, 8GB gp2 volume)
         run: |
           # If previous run failed and is stuck in ROLLBACK_COMPLETE, delete it first
           STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text 2>/dev/null || true)
@@ -46,13 +46,13 @@ jobs:
             echo "✅ Cleaned up old stack."
           fi
 
-          # Resolve latest official Ubuntu 24.04 AMI ID for the active region
-          # Using hvm-ssd (gp2) image family — matches what AWS console uses
-          # and what awsstudent IAM user is permitted to launch under lab_policy
-          echo "🔍 Fetching latest Ubuntu 24.04 AMI (gp2/hvm-ssd) for $AWS_REGION..."
+          # Ubuntu 24.04 (Noble) only exists in the hvm-ssd-gp3 AMI family.
+          # The gp3 volume type is overridden to gp2 via BlockDeviceMappings
+          # in the CloudFormation template — so the lab_policy restriction is handled there.
+          echo "🔍 Fetching latest Ubuntu 24.04 AMI for $AWS_REGION..."
           UBUNTU_AMI=$(aws ec2 describe-images \
             --owners 099720109477 \
-            --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" "Name=state,Values=available" \
+            --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*" "Name=state,Values=available" \
             --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
             --output text)
           echo "✅ Resolved AMI: $UBUNTU_AMI"
