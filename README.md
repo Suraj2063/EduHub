@@ -9,7 +9,7 @@ EduHub is a full-stack MERN application built specifically for university and co
 ## ✨ Key Features
 
 ### 🎧 1. AI Spoken Audio Lectures & 24/7 AI Tutor
-- Converts study notes and multi-page PDFs into thorough, university-grade audio lectures.
+- Convert study notes and multi-page PDFs into thorough, university-grade audio lectures.
 - **Dual-Language Neural Voiceover**: Choose between natural **English** and pure **Nepali (नेपाली)** audio narration.
 - **Interactive AI Tutor**: Ask questions about any specific lecture segment in real time and receive spoken, context-aware audio explanations with practical examples.
 - Background prefetching, playback speed toggles (0.75x to 2x), and chapter scrubbers.
