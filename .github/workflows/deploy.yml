@@ -34,7 +34,7 @@ jobs:
       - name: Validate CloudFormation Template
         run: aws cloudformation validate-template --template-body file://${{ env.TEMPLATE }}
 
-      - name: Deploy CloudFormation Stack (t3.medium, 8GB gp2 volume)
+      - name: Deploy CloudFormation Stack (Amazon Linux 2023, t3.medium, gp2)
         run: |
           # If previous run failed and is stuck in ROLLBACK_COMPLETE, delete it first
           STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text 2>/dev/null || true)
@@ -46,31 +46,12 @@ jobs:
             echo "✅ Cleaned up old stack."
           fi
 
-          # Ubuntu 24.04 (Noble) only exists in the hvm-ssd-gp3 AMI family.
-          # The gp3 volume type is overridden to gp2 via BlockDeviceMappings
-          # in the CloudFormation template — so the lab_policy restriction is handled there.
-          echo "🔍 Fetching latest Ubuntu 24.04 AMI for $AWS_REGION..."
-          UBUNTU_AMI=$(aws ec2 describe-images \
-            --owners 099720109477 \
-            --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*" "Name=state,Values=available" \
-            --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
-            --output text)
-          echo "✅ Resolved AMI: $UBUNTU_AMI"
-
-          # Get the account ID to build LabRole ARN
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "📋 Account ID: $ACCOUNT_ID"
-
-          # AWS Academy Learner Labs create a 'LabRole' with broader permissions.
-          # The awsstudent IAM user has lab_policy that denies ec2:RunInstances on volume/*.
-          # By passing LabRole as the CF execution role, CloudFormation uses it to make
-          # EC2 API calls — bypassing the awsstudent user's restrictions.
+          # AMI is resolved by CloudFormation via AWS::SSM::Parameter::Value
+          # No need to resolve it here — CF reads the SSM path directly.
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "$TEMPLATE" \
-            --parameter-overrides InstanceType=t3.medium AmiId="$UBUNTU_AMI" \
-            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-            --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/LabRole" \
+            --parameter-overrides InstanceType=t3.medium \
             --no-fail-on-empty-changeset || {
               echo "::error::CloudFormation deploy failed! Printing failure reasons:"
               aws cloudformation describe-stack-events \
@@ -114,19 +95,19 @@ jobs:
           IP: ${{ steps.instance.outputs.ip }}
         run: |
           for i in $(seq 1 30); do
-            ssh $SSH_OPTS ubuntu@"$IP" true && break
+            ssh $SSH_OPTS ec2-user@"$IP" true && break
             echo "Waiting for SSH to be ready ($i/30)..."
             sleep 10
           done
 
           # Wait for UserData (Docker installation) to finish
-          ssh $SSH_OPTS ubuntu@"$IP" 'cloud-init status --wait' || true
+          ssh $SSH_OPTS ec2-user@"$IP" 'cloud-init status --wait' || true
 
       - name: Deploy MERN Docker Containers
         env:
           IP: ${{ steps.instance.outputs.ip }}
         run: |
-          ssh $SSH_OPTS ubuntu@"$IP" << 'EOF'
+          ssh $SSH_OPTS ec2-user@"$IP" << 'EOF'
             set -e
             if [ ! -d "$HOME/MERN_Project" ]; then
               cd "$HOME"
