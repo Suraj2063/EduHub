@@ -11,10 +11,9 @@ Parameters:
     Type: Number
     Default: 20
     Description: Root disk volume size in GB (Default 20GB)
-  LatestAmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
-    Description: Public SSM parameter resolving to the latest Ubuntu 24.04 LTS AMI
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: Ubuntu 24.04 LTS AMI ID
 
 Resources:
   # 1. SSH Key Pair (AWS automatically stores private key in SSM Parameter Store)
@@ -42,7 +41,7 @@ Resources:
   Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: !Ref LatestAmiId
+      ImageId: !Ref AmiId
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyPair
       BlockDeviceMappings:

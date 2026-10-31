@@ -46,14 +46,26 @@ jobs:
             echo "✅ Cleaned up old stack."
           fi
 
+          # Resolve latest official Ubuntu 24.04 AMI ID for the active region
+          echo "🔍 Fetching latest Ubuntu 24.04 AMI for $AWS_REGION..."
+          UBUNTU_AMI=$(aws ec2 describe-images \
+            --owners 099720109477 \
+            --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*" "Name=state,Values=available" \
+            --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
+            --output text)
+          echo "✅ Resolved AMI: $UBUNTU_AMI"
+
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "$TEMPLATE" \
-            --parameter-overrides InstanceType=t3.medium VolumeSize=20 \
+            --parameter-overrides InstanceType=t3.medium VolumeSize=20 AmiId="$UBUNTU_AMI" \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --no-fail-on-empty-changeset || {
-              echo "::error::CloudFormation deploy failed! Printing stack events:"
-              aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --max-items 20 --output table
+              echo "::error::CloudFormation deploy failed! Printing failure reasons:"
+              aws cloudformation describe-stack-events \
+                --stack-name "$STACK_NAME" \
+                --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatus,ResourceStatusReason]" \
+                --output table
               exit 1
             }
 
