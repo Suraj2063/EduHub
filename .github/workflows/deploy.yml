@@ -36,11 +36,26 @@ jobs:
 
       - name: Deploy CloudFormation Stack (t3.medium + 20GB Storage)
         run: |
+          # If previous run failed and is stuck in ROLLBACK_COMPLETE, delete it first
+          STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text 2>/dev/null || true)
+          echo "Current stack status: ${STATUS:-DOES_NOT_EXIST}"
+          if [ "$STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STATUS" = "CREATE_FAILED" ]; then
+            echo "🗑️ Deleting rolled-back stack before re-deploying..."
+            aws cloudformation delete-stack --stack-name "$STACK_NAME"
+            aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
+            echo "✅ Cleaned up old stack."
+          fi
+
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "$TEMPLATE" \
             --parameter-overrides InstanceType=t3.medium VolumeSize=20 \
-            --no-fail-on-empty-changeset
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset || {
+              echo "::error::CloudFormation deploy failed! Printing stack events:"
+              aws cloudformation describe-stack-events --stack-name "$STACK_NAME" --max-items 20 --output table
+              exit 1
+            }
 
       - name: Retrieve Instance Details & Public IP
         id: instance
