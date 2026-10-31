@@ -58,7 +58,8 @@ jobs:
           aws cloudformation deploy \
             --stack-name "$STACK_NAME" \
             --template-file "$TEMPLATE" \
-            --parameter-overrides InstanceType=t3.medium AmiId="$UBUNTU_AMI" KeyPairName=vockey \
+            --parameter-overrides InstanceType=t3.medium AmiId="$UBUNTU_AMI" \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --no-fail-on-empty-changeset || {
               echo "::error::CloudFormation deploy failed! Printing failure reasons:"
               aws cloudformation describe-stack-events \
@@ -73,6 +74,7 @@ jobs:
         run: |
           output() { aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
           INSTANCE_ID=$(output InstanceId)
+          KEY_ID=$(output KeyPairId)
 
           STATE=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].State.Name" --output text)
           echo "Instance $INSTANCE_ID is $STATE"
@@ -84,14 +86,16 @@ jobs:
 
           IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
           echo "ip=$IP" >> "$GITHUB_OUTPUT"
+          echo "key_id=$KEY_ID" >> "$GITHUB_OUTPUT"
           echo "🌐 EC2 Public IP is: $IP"
 
-      - name: Write SSH Key from GitHub Secret
+      - name: Get SSH Key from AWS SSM Parameter Store
         run: |
-          # EC2_SSH_KEY = private key of the AWS Academy 'vockey' key pair
-          # Get it from: AWS Academy → Learner Lab → SSH Key → Download PEM
-          # Then add it as a GitHub secret named EC2_SSH_KEY
-          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
+          aws ssm get-parameter \
+            --name "/ec2/keypair/${{ steps.instance.outputs.key_id }}" \
+            --with-decryption \
+            --query Parameter.Value \
+            --output text > ec2-key.pem
           chmod 600 ec2-key.pem
 
       - name: Wait for SSH & First-Boot Docker Setup

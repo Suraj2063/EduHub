@@ -10,15 +10,16 @@ Parameters:
   AmiId:
     Type: AWS::EC2::Image::Id
     Description: Ubuntu 24.04 LTS AMI ID (resolved dynamically in workflow)
-  KeyPairName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: vockey
-    Description: Existing EC2 Key Pair name (AWS Academy pre-creates 'vockey')
 
 Resources:
 
-  # ── Security Group ────────────────────────────────────────────────────────────
-  #   Allow inbound SSH (22) and HTTP (80)
+  # SSH Key Pair — auto-stored in SSM Parameter Store at /ec2/keypair/<KeyPairId>
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Sub "${AWS::StackName}-keypair"
+      KeyType: rsa
+
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -44,7 +45,7 @@ Resources:
     Properties:
       ImageId: !Ref AmiId
       InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyPairName
+      KeyName: !Ref KeyPair
       SecurityGroupIds:
         - !GetAtt SecurityGroup.GroupId
       UserData:
@@ -82,6 +83,9 @@ Outputs:
   PublicIp:
     Description: Public IP of the EC2 instance
     Value: !GetAtt Instance.PublicIp
+  KeyPairId:
+    Description: Key pair ID — fetch private key from SSM Parameter Store
+    Value: !GetAtt KeyPair.KeyPairId
   WebsiteURL:
     Description: Live URL of the MERN Application
     Value: !Sub "http://${Instance.PublicIp}"
