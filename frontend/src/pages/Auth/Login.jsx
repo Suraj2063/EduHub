@@ -1,6 +1,6 @@
 import { API_URL, API_BASE_URL } from "../../config";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { setAuth } from "../../utils/auth";
@@ -13,6 +13,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,7 +41,8 @@ function Login() {
         setAuth(response.data.result.token, response.data.result.user);
         window.dispatchEvent(new Event("authChange"));
         toast.success(response.data.message || "Login successful!");
-        navigate("/");
+        const redirectTo = location.state?.from || "/";
+        navigate(redirectTo, { replace: true });
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid email or password");
@@ -136,7 +138,7 @@ function Login() {
         {/* Footer */}
         <p className="auth-footer">
           Don't have an account?{" "}
-          <Link to="/register" className="auth-link">
+          <Link to="/register" state={{ from: location.state?.from }} className="auth-link">
             Create an account
           </Link>
         </p>

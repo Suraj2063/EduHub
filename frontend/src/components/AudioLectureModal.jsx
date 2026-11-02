@@ -2,6 +2,7 @@ import { API_URL, API_BASE_URL } from "../config";
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { getToken } from "../utils/auth";
 import "./AudioLectureModal.css";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
@@ -78,10 +79,14 @@ function AudioLectureModal({ resource, onClose }) {
     setStep("loading");
     setSelectedLang(langToUse);
     try {
-      const res = await axios.post(`${API_BASE}/api/audio/generate-script`, {
-        resourceId: resource._id,
-        language: langToUse,
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/audio/generate-script`,
+        {
+          resourceId: resource._id,
+          language: langToUse,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
 
       if (res.data.success && res.data.result?.segments?.length > 0) {
         setScript(res.data.result);
@@ -110,10 +115,14 @@ function AudioLectureModal({ resource, onClose }) {
   const fetchSegmentAudio = async (idx, text, lang = selectedLang) => {
     if (audioCache[idx]) return audioCache[idx];
     try {
-      const res = await axios.post(`${API_BASE}/api/audio/synthesize`, {
-        text,
-        language: lang,
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/audio/synthesize`,
+        {
+          text,
+          language: lang,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
       if (res.data.success && res.data.result?.url) {
         // url is a full Cloudinary https:// URL — do NOT prepend API_BASE
         const rawUrl = res.data.result.url;
@@ -283,13 +292,17 @@ function AudioLectureModal({ resource, onClose }) {
 
     try {
       const activeSeg = script?.segments?.[currentSegIdx];
-      const res = await axios.post(`${API_BASE}/api/audio/ask-tutor`, {
-        resourceId: resource._id,
-        segmentLabel: activeSeg?.label || "General Topic",
-        segmentText: activeSeg?.text || "",
-        question: q.trim(),
-        language: script?.language || selectedLang,
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/audio/ask-tutor`,
+        {
+          resourceId: resource._id,
+          segmentLabel: activeSeg?.label || "General Topic",
+          segmentText: activeSeg?.text || "",
+          question: q.trim(),
+          language: script?.language || selectedLang,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
 
       if (res.data.success && res.data.result) {
         setTutorAnswer(res.data.result.answer);

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const User = require("../schema/userSchema");
+const { verifyToken } = require("../middleware/auth");
 const {
   uploadStreamToCloudinary,
   deleteFromCloudinary,
@@ -23,30 +24,6 @@ const upload = multer({
     }
   },
 });
-
-// Middleware to verify token
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Access denied. No token provided.",
-      result: null,
-    });
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token",
-      result: null,
-    });
-  }
-};
 
 // GET /api/users/me  — get logged-in user
 router.route("/me").get(verifyToken, async (req, res) => {

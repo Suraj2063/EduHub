@@ -1,7 +1,7 @@
 const express = require("express");
 const Resource = require("../schema/resourceSchema");
 const QuizResult = require("../schema/quizResultSchema");
-const { verifyToken } = require("./userRoutes");
+const { verifyToken } = require("../middleware/auth");
 const { generateQuizQuestions } = require("../utils/quizGenerator");
 const { extractPdfText } = require("../utils/pdfExtractor");
 
@@ -11,7 +11,7 @@ const router = express.Router();
  * POST /api/quiz/generate
  * Generates N (5, 10, 15, 20) MCQs for a given study note
  */
-router.post("/generate", async (req, res) => {
+router.post("/generate", verifyToken, async (req, res) => {
   try {
     const { resourceId, count = 5 } = req.body;
 

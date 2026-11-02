@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const Resource = require("../schema/resourceSchema");
+const { verifyToken } = require("../middleware/auth");
 const { extractPdfText } = require("../utils/pdfExtractor");
 const { generateVideoScript } = require("../utils/videoScriptGenerator");
 const { synthesizeAudio } = require("../utils/ttsService");
@@ -16,7 +17,7 @@ const renderedVideoUrls = new Map();
  * Generates an animated video lecture script & audio segments for all scenes.
  * Body: { resourceId, language = "en" | "ne", depth = "detailed" | "recap" }
  */
-router.post("/generate", async (req, res) => {
+router.post("/generate", verifyToken, async (req, res) => {
   try {
     const { resourceId, language = "en", depth = "detailed" } = req.body;
 
@@ -126,7 +127,7 @@ router.post("/generate", async (req, res) => {
  * and uploads to Cloudinary. Zero persistent local storage.
  * Body: { videoId }
  */
-router.post("/render-mp4", async (req, res) => {
+router.post("/render-mp4", verifyToken, async (req, res) => {
   try {
     const { videoId } = req.body;
     if (!videoId) {

@@ -33,6 +33,7 @@ function QuizModal({ resource, onClose, onQuizCompleted }) {
       const response = await axios({
         url: `${API_URL}/quiz/generate`,
         method: "post",
+        headers: { Authorization: `Bearer ${getToken()}` },
         data: {
           resourceId: resource._id,
           count: questionCount,

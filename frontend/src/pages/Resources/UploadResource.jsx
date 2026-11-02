@@ -43,7 +43,7 @@ function UploadResource() {
   useEffect(() => {
     if (!isLoggedIn()) {
       toast.error("Please login to upload resources", { toastId: "login-required" });
-      navigate("/login");
+      navigate("/login", { state: { from: "/upload" } });
     }
   }, [navigate]);
 

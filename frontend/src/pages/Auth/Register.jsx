@@ -1,6 +1,6 @@
 import { API_URL, API_BASE_URL } from "../../config";
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { setAuth } from "../../utils/auth";
@@ -23,6 +23,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 60-second countdown timer for resending OTP
   useEffect(() => {
@@ -183,7 +184,8 @@ function Register() {
         setAuth(response.data.result.token, response.data.result.user);
         window.dispatchEvent(new Event("authChange"));
         toast.success(response.data.message || "Account created! Welcome to EduHub");
-        navigate("/");
+        const redirectTo = location.state?.from || "/";
+        navigate(redirectTo, { replace: true });
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid or expired code");

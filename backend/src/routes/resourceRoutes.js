@@ -1,6 +1,6 @@
 const express = require("express");
 const Resource = require("../schema/resourceSchema");
-const { verifyToken } = require("./userRoutes");
+const { verifyToken } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const {
   uploadStreamToCloudinary,

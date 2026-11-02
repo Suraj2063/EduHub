@@ -1,6 +1,7 @@
 import { API_URL, API_BASE_URL } from "../config";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { getToken } from "../utils/auth";
 import "./VideoLectureModal.css";
 
 const API_BASE = `${API_URL}`;
@@ -67,11 +68,15 @@ export default function VideoLectureModal({ resource, onClose }) {
         );
       }, 7000);
 
-      const res = await axios.post(`${API_BASE}/video/generate`, {
-        resourceId: resource._id,
-        language,
-        depth,
-      });
+      const res = await axios.post(
+        `${API_BASE}/video/generate`,
+        {
+          resourceId: resource._id,
+          language,
+          depth,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
 
       clearTimeout(statusTimer1);
       clearTimeout(statusTimer2);
@@ -208,12 +213,16 @@ export default function VideoLectureModal({ resource, onClose }) {
     setTutorAnswer("");
 
     try {
-      const res = await axios.post(`${API_BASE}/audio/ask-tutor`, {
-        resourceId: resource._id,
-        currentSegment: currentScene?.title || resource.title,
-        question: q,
-        language,
-      });
+      const res = await axios.post(
+        `${API_BASE}/audio/ask-tutor`,
+        {
+          resourceId: resource._id,
+          currentSegment: currentScene?.title || resource.title,
+          question: q,
+          language,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
 
       if (res.data?.success) {
         setTutorAnswer(res.data.result.answer);

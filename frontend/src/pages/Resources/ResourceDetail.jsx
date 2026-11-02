@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { getToken, getUser } from "../../utils/auth";
+import { getToken, getUser, isLoggedIn } from "../../utils/auth";
 import { getBadgeColor, formatDate } from "../../utils/helpers";
 import { EditIcon, TrashIcon, DocumentIcon, PdfIcon, EyeIcon, CloseIcon } from "../../components/Icons";
 import QuizModal from "../../components/QuizModal";
@@ -32,6 +32,17 @@ function ResourceDetail() {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [bestScore, setBestScore] = useState(null);
   const currentUser = getUser();
+
+  const handleRequireAuth = (actionCallback, featureName = "AI study tools") => {
+    if (!isLoggedIn()) {
+      toast.info(`Please log in or create a free account to access ${featureName}.`, {
+        toastId: "auth-gate",
+      });
+      navigate("/login", { state: { from: `/resources/${id}` } });
+      return;
+    }
+    actionCallback();
+  };
 
   useEffect(() => {
     const fetchResource = async () => {
@@ -237,9 +248,11 @@ function ResourceDetail() {
               <button
                 type="button"
                 className="cta-download-btn btn-audio-cta"
-                onClick={() => setShowAudioModal(true)}
+                onClick={() =>
+                  handleRequireAuth(() => setShowAudioModal(true), "AI Audio Lectures")
+                }
               >
-                Listen Now
+                {isLoggedIn() ? "Listen Now" : "🔒 Log in to Listen"}
               </button>
             </div>
           </div>
@@ -265,9 +278,11 @@ function ResourceDetail() {
               <button
                 type="button"
                 className="cta-download-btn btn-video-cta"
-                onClick={() => setShowVideoModal(true)}
+                onClick={() =>
+                  handleRequireAuth(() => setShowVideoModal(true), "AI Video Lectures")
+                }
               >
-                Watch Video Lecture
+                {isLoggedIn() ? "Watch Video Lecture" : "🔒 Log in to Watch"}
               </button>
             </div>
           </div>
@@ -300,9 +315,16 @@ function ResourceDetail() {
               <button
                 type="button"
                 className="cta-download-btn btn-quiz-cta"
-                onClick={() => setShowQuizModal(true)}
+                onClick={() =>
+                  handleRequireAuth(
+                    () => setShowQuizModal(true),
+                    "AI Practice Quizzes"
+                  )
+                }
               >
-                {bestScore ? "Retake Quiz" : "Start Quiz"}
+                {isLoggedIn()
+                  ? (bestScore ? "Retake Quiz" : "Start Quiz")
+                  : "🔒 Log in for Quiz"}
               </button>
             </div>
           </div>

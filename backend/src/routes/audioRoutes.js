@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const Groq = require("groq-sdk");
 const Resource = require("../schema/resourceSchema");
+const { verifyToken } = require("../middleware/auth");
 const { generateAudioScript } = require("../utils/audioScriptGenerator");
 const { extractPdfText } = require("../utils/pdfExtractor");
 const { synthesizeAudio } = require("../utils/ttsService");
@@ -18,7 +19,7 @@ if (!fs.existsSync(AUDIO_DIR)) {
  * POST /api/audio/generate-script
  * Generates a conversational AI lecture script from the actual PDF content in English or Nepali.
  */
-router.post("/generate-script", async (req, res) => {
+router.post("/generate-script", verifyToken, async (req, res) => {
   try {
     const { resourceId, language = "en" } = req.body;
 
@@ -67,7 +68,7 @@ router.post("/generate-script", async (req, res) => {
  * POST /api/audio/synthesize
  * Synthesizes text to Piper TTS (English) or Neural Voice (Nepali)
  */
-router.post("/synthesize", async (req, res) => {
+router.post("/synthesize", verifyToken, async (req, res) => {
   try {
     const { text, language = "en" } = req.body;
 
@@ -133,7 +134,7 @@ router.get("/stream/:fileName", (req, res) => {
  * POST /api/audio/ask-tutor
  * Allows students to ask questions or request deeper detail on a specific lecture topic/segment.
  */
-router.post("/ask-tutor", async (req, res) => {
+router.post("/ask-tutor", verifyToken, async (req, res) => {
   try {
     const { resourceId, segmentLabel, segmentText, question, language = "en" } = req.body;
 
