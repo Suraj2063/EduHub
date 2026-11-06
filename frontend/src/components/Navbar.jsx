@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { getUser, clearAuth } from "../utils/auth";
+import { getUser, clearAuth, refreshUser, isLoggedIn } from "../utils/auth";
 import Logo from "./Logo";
 import "./Navbar.css";
 
@@ -13,6 +13,9 @@ function Navbar() {
 
   useEffect(() => {
     setUser(getUser());
+    if (isLoggedIn()) {
+      refreshUser();
+    }
   }, []);
 
   useEffect(() => {

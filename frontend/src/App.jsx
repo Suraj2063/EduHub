@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { refreshUser, isLoggedIn } from "./utils/auth";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home/Home";
@@ -12,6 +14,23 @@ import Settings from "./pages/Settings/Settings";
 import "./App.css";
 
 function App() {
+  useEffect(() => {
+    // Sync user data on initial app load if token exists
+    if (isLoggedIn()) {
+      refreshUser();
+    }
+
+    // Auto-sync whenever tab/window regains focus
+    const handleFocus = () => {
+      if (isLoggedIn()) {
+        refreshUser();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
   return (
     <div className="app-root">
       <Navbar />

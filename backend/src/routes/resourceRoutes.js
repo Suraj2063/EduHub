@@ -21,6 +21,7 @@ router
       if (search) filter.title = { $regex: search, $options: "i" };
 
       const resources = await Resource.find(filter)
+        .select("-extractedText")
         .populate("uploadedBy", "name email avatar")
         .sort({ createdAt: -1 });
 
@@ -276,6 +277,7 @@ router
 router.route("/user/:userId").get(async (req, res) => {
   try {
     const resources = await Resource.find({ uploadedBy: req.params.userId })
+      .select("-extractedText")
       .populate("uploadedBy", "name email avatar")
       .sort({ createdAt: -1 });
     res.status(200).json({

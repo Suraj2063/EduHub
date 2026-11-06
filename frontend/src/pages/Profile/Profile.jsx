@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { getToken, isLoggedIn } from "../../utils/auth";
+import { getToken, isLoggedIn, updateUser } from "../../utils/auth";
 import { getBadgeColor, formatDate } from "../../utils/helpers";
 import { FolderIcon } from "../../components/Icons";
 import "../../components/ResourceCard.css";
@@ -35,25 +35,22 @@ function Profile() {
 
         const userData = userRes.data.result;
         setUser(userData);
+        updateUser(userData);
 
-        const uploadsRes = await axios({
-          url: `${API_URL}/resources/user/${userData._id}`,
-          method: "get",
-        });
-        setUploads(uploadsRes.data.result || []);
+        // Fetch Uploads and Quiz History in parallel to avoid waterfalls
+        const [uploadsRes, quizRes] = await Promise.all([
+          axios.get(`${API_URL}/resources/user/${userData._id}`),
+          axios
+            .get(`${API_URL}/quiz/my-results`, { headers: { Authorization: `Bearer ${token}` } })
+            .catch((quizErr) => {
+              console.error("Failed to fetch quiz history:", quizErr);
+              return { data: { success: false, result: [] } };
+            }),
+        ]);
 
-        // Fetch Quiz History
-        try {
-          const quizRes = await axios({
-            url: `${API_URL}/quiz/my-results`,
-            method: "get",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (quizRes.data.success) {
-            setQuizResults(quizRes.data.result || []);
-          }
-        } catch (quizErr) {
-          console.error("Failed to fetch quiz history:", quizErr);
+        setUploads(uploadsRes.data?.result || []);
+        if (quizRes.data?.success) {
+          setQuizResults(quizRes.data.result || []);
         }
       } catch (error) {
         if (error.response?.status === 401) {

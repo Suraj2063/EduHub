@@ -31,7 +31,17 @@ function ResourceDetail() {
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [bestScore, setBestScore] = useState(null);
-  const currentUser = getUser();
+  const [currentUser, setCurrentUser] = useState(getUser);
+
+  useEffect(() => {
+    const syncUser = () => setCurrentUser(getUser());
+    window.addEventListener("authChange", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("authChange", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
 
   const handleRequireAuth = (actionCallback, featureName = "AI study tools") => {
     if (!isLoggedIn()) {

@@ -62,6 +62,11 @@ const resourceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Performance indexes for instantaneous feed and user queries
+resourceSchema.index({ createdAt: -1 });
+resourceSchema.index({ subject: 1, createdAt: -1 });
+resourceSchema.index({ uploadedBy: 1, createdAt: -1 });
+
 resourceSchema.pre("validate", function () {
   if (!this.filePath && !this.fileUrl && !this.fileName) {
     this.invalidate("file", "A study note document file is compulsory");

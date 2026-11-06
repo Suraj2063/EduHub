@@ -20,22 +20,36 @@ const SUBJECTS = [
   "Other",
 ];
 
+// Lightweight memory cache to make back navigation 0ms instantaneous
+let feedCache = {
+  data: null,
+  key: "",
+};
+
 function Home() {
-  const [resources, setResources] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const initialCache = feedCache.data && feedCache.key === "All:" ? feedCache.data : [];
+  const [resources, setResources] = useState(initialCache);
+  const [loading, setLoading] = useState(initialCache.length === 0);
   const [search, setSearch] = useState("");
   const [activeSubject, setActiveSubject] = useState("All");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 350);
+    if (!search && !debouncedSearch) return;
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
+    let isCancelled = false;
+    const cacheKey = `${activeSubject}:${debouncedSearch.trim()}`;
+
     const fetchResources = async () => {
-      try {
+      // Only show full loading spinner if there is no cached data to display
+      if (feedCache.key !== cacheKey || !feedCache.data) {
         setLoading(true);
+      }
+      try {
         const params = {};
         if (debouncedSearch) params.search = debouncedSearch;
         if (activeSubject !== "All") params.subject = activeSubject;
@@ -45,15 +59,24 @@ function Home() {
           method: "get",
           params,
         });
-        setResources(response.data.result || []);
+        if (!isCancelled) {
+          const list = response.data.result || [];
+          setResources(list);
+          feedCache = { data: list, key: cacheKey };
+        }
       } catch (error) {
         console.error("Error fetching resources:", error);
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchResources();
+    return () => {
+      isCancelled = true;
+    };
   }, [debouncedSearch, activeSubject]);
 
   return (

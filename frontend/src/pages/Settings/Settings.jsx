@@ -49,6 +49,7 @@ function Settings() {
 
         if (response.data.success) {
           const u = response.data.result;
+          updateUser(u);
           setProfileData({
             name: u.name || "",
             email: u.email || "",
