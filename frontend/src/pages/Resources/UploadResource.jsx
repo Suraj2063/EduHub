@@ -35,6 +35,7 @@ function UploadResource() {
     fileUrl: "",
     description: "",
   });
+  const [customSubject, setCustomSubject] = useState("");
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,7 +97,11 @@ function UploadResource() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.subject.trim() || !formData.description.trim()) {
+    const finalSubject = formData.subject === "Other"
+      ? (customSubject.trim() || "Other")
+      : formData.subject.trim();
+
+    if (!formData.title.trim() || !finalSubject || !formData.description.trim()) {
       toast.error("Please fill in Title, Subject, and Description");
       return;
     }
@@ -110,7 +115,7 @@ function UploadResource() {
     try {
       const postData = new FormData();
       postData.append("title", formData.title.trim());
-      postData.append("subject", formData.subject.trim());
+      postData.append("subject", finalSubject);
       postData.append("description", formData.description.trim());
       if (formData.fileUrl.trim()) {
         postData.append("fileUrl", formData.fileUrl.trim());
@@ -188,6 +193,20 @@ function UploadResource() {
                 </option>
               ))}
             </select>
+
+            {formData.subject === "Other" && (
+              <div style={{ marginTop: "10px" }}>
+                <input
+                  id="upload-custom-subject"
+                  type="text"
+                  placeholder="Specify custom subject (e.g. Psychology, Law, Architecture)..."
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  className="field-input"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
 
           {/* Direct File Upload Drop Zone */}

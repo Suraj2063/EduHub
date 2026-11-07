@@ -1,6 +1,6 @@
 import { API_URL, API_BASE_URL } from "../../config";
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { getToken, getUser, isLoggedIn } from "../../utils/auth";
@@ -9,6 +9,7 @@ import { EditIcon, TrashIcon, DocumentIcon, PdfIcon, EyeIcon, CloseIcon } from "
 import QuizModal from "../../components/QuizModal";
 import AudioLectureModal from "../../components/AudioLectureModal";
 import VideoLectureModal from "../../components/VideoLectureModal";
+import ConfirmModal from "../../components/ConfirmModal";
 import "./UploadResource.css";
 import "./ResourceDetail.css";
 
@@ -23,15 +24,23 @@ const formatFileSize = (bytes) => {
 function ResourceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [bestScore, setBestScore] = useState(null);
   const [currentUser, setCurrentUser] = useState(getUser);
+
+  useEffect(() => {
+    if (searchParams.get("quiz") === "true") {
+      setShowQuizModal(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const syncUser = () => setCurrentUser(getUser());
@@ -94,7 +103,6 @@ function ResourceDetail() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) return;
     setDeleting(true);
     try {
       const response = await axios({
@@ -104,6 +112,7 @@ function ResourceDetail() {
       });
       if (response.data.success) {
         toast.success("Resource deleted successfully");
+        setShowDeleteModal(false);
         navigate("/");
       }
     } catch (error) {
@@ -401,7 +410,7 @@ function ResourceDetail() {
                   <EditIcon size={15} /> Edit
                 </Link>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteModal(true)}
                   disabled={deleting}
                   className="btn-action-delete"
                 >
@@ -413,6 +422,17 @@ function ResourceDetail() {
 
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Study Note?"
+        message={`Are you sure you want to delete "${resource?.title}"? This action cannot be undone.`}
+        confirmText="Delete Note"
+        isLoading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
 
       {/* Quiz Modal */}
       {showQuizModal && (

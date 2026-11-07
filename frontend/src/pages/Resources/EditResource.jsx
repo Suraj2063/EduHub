@@ -38,6 +38,7 @@ function EditResource() {
     fileUrl: "",
     description: "",
   });
+  const [customSubject, setCustomSubject] = useState("");
   const [existingFile, setExistingFile] = useState(null);
   const [newFile, setNewFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -61,12 +62,17 @@ function EditResource() {
           return;
         }
 
+        const isStandardSubject = SUBJECTS.slice(0, -1).includes(data.subject);
         setFormData({
           title: data.title,
-          subject: data.subject,
+          subject: isStandardSubject ? data.subject : "Other",
           fileUrl: data.fileUrl || "",
           description: data.description,
         });
+
+        if (!isStandardSubject) {
+          setCustomSubject(data.subject === "Other" ? "" : data.subject);
+        }
 
         if (data.filePath) {
           setExistingFile({
@@ -134,7 +140,12 @@ function EditResource() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.subject.trim() || !formData.description.trim()) {
+
+    const finalSubject = formData.subject === "Other"
+      ? (customSubject.trim() || "Other")
+      : formData.subject.trim();
+
+    if (!formData.title.trim() || !finalSubject || !formData.description.trim()) {
       toast.error("Please fill in Title, Subject, and Description");
       return;
     }
@@ -152,7 +163,7 @@ function EditResource() {
     try {
       const patchData = new FormData();
       patchData.append("title", formData.title.trim());
-      patchData.append("subject", formData.subject.trim());
+      patchData.append("subject", finalSubject);
       patchData.append("description", formData.description.trim());
       patchData.append("fileUrl", formData.fileUrl ? formData.fileUrl.trim() : "");
       if (newFile) {
@@ -235,6 +246,20 @@ function EditResource() {
                 </option>
               ))}
             </select>
+
+            {formData.subject === "Other" && (
+              <div style={{ marginTop: "10px" }}>
+                <input
+                  id="edit-custom-subject"
+                  type="text"
+                  placeholder="Specify custom subject (e.g. Psychology, Law, Architecture)..."
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  className="field-input"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
 
           {/* Document File Management */}

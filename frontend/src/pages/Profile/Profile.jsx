@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { getToken, isLoggedIn, updateUser } from "../../utils/auth";
 import { getBadgeColor, formatDate } from "../../utils/helpers";
 import { FolderIcon } from "../../components/Icons";
+import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ResourceCard.css";
 import "./Profile.css";
 
@@ -14,6 +15,8 @@ function Profile() {
   const [uploads, setUploads] = useState([]);
   const [quizResults, setQuizResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resourceToDelete, setResourceToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,22 +70,26 @@ function Profile() {
     fetchProfileAndUploads();
   }, [navigate]);
 
-  const handleDelete = async (resourceId) => {
-    if (!window.confirm("Are you sure you want to delete this resource?")) return;
+  const confirmDelete = async () => {
+    if (!resourceToDelete) return;
+    setDeleting(true);
 
     try {
       const response = await axios({
-        url: `${API_URL}/resources/${resourceId}`,
+        url: `${API_URL}/resources/${resourceToDelete._id}`,
         method: "delete",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
 
       if (response.data.success) {
         toast.success("Resource deleted successfully");
-        setUploads(uploads.filter((item) => item._id !== resourceId));
+        setUploads(uploads.filter((item) => item._id !== resourceToDelete._id));
+        setResourceToDelete(null);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -238,7 +245,7 @@ function Profile() {
                       {formatDate(result.createdAt)}
                     </span>
                     <Link
-                      to={`/resources/${result.resource?._id || result.resource}`}
+                      to={`/resources/${result.resource?._id || result.resource}?quiz=true`}
                       className="btn-retake-quiz-link"
                     >
                       Retake Quiz →
@@ -301,7 +308,7 @@ function Profile() {
                       Edit
                     </Link>
                     <button
-                      onClick={() => handleDelete(item._id)}
+                      onClick={() => setResourceToDelete(item)}
                       className="btn-delete-small"
                     >
                       Delete
@@ -313,6 +320,17 @@ function Profile() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!resourceToDelete}
+        title="Delete Study Note?"
+        message={`Are you sure you want to delete "${resourceToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete Note"
+        isLoading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setResourceToDelete(null)}
+      />
     </div>
   );
 }
